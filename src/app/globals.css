@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+/* Dark mode driven by a `.dark` class on <html> (toggle-able) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #f6f7fb;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-hover: #f8fafc;
+  --muted: #64748b;
+  --muted-bg: #eef2f7;
+  --border: #e2e8f0;
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --primary-fg: #ffffff;
+  --danger: #ef4444;
+}
+
+.dark {
+  --background: #0a0f1e;
+  --foreground: #e6ebf5;
+  --card: #141c30;
+  --card-hover: #1b2540;
+  --muted: #93a1b8;
+  --muted-bg: #1c2743;
+  --border: #2a3652;
+  --primary: #818cf8;
+  --primary-hover: #6366f1;
+  --primary-fg: #0a0f1e;
+  --danger: #f87171;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-hover: var(--card-hover);
+  --color-muted: var(--muted);
+  --color-muted-bg: var(--muted-bg);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-fg: var(--primary-fg);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Thin, theme-aware scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+@keyframes lv-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes lv-scale-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.lv-overlay { animation: lv-fade-in 0.15s ease-out; }
+.lv-modal { animation: lv-scale-in 0.18s ease-out; }
