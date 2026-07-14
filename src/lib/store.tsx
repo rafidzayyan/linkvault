@@ -54,7 +54,7 @@ interface Ctx {
   setView: (v: ViewMode) => void;
 
   // Auth
-  signInWithGoogle: () => Promise<void>;
+  signInWithEmail: (email: string) => Promise<string | null>; // null = sukses, string = pesan error
   signOut: () => Promise<void>;
 
   // Links
@@ -285,14 +285,20 @@ export function LinkVaultProvider({ children }: { children: React.ReactNode }) {
 
   // ---- Auth actions --------------------------------------------------------
 
-  const signInWithGoogle = useCallback(async () => {
-    if (!supabase) return;
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
-    if (error) reportError(error, "Gagal masuk dengan Google.");
-  }, [supabase, reportError]);
+  const signInWithEmail = useCallback(
+    async (email: string): Promise<string | null> => {
+      if (!supabase) return "Aplikasi belum terkonfigurasi.";
+      const clean = email.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) return "Format email tidak valid.";
+      const { error } = await supabase.auth.signInWithOtp({
+        email: clean,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) return error.message;
+      return null;
+    },
+    [supabase],
+  );
 
   const signOut = useCallback(async () => {
     if (!supabase) return;
@@ -708,7 +714,7 @@ export function LinkVaultProvider({ children }: { children: React.ReactNode }) {
       links,
       view,
       setView,
-      signInWithGoogle,
+      signInWithEmail,
       signOut,
       addLink,
       updateLink,
@@ -745,7 +751,7 @@ export function LinkVaultProvider({ children }: { children: React.ReactNode }) {
       links,
       view,
       setView,
-      signInWithGoogle,
+      signInWithEmail,
       signOut,
       addLink,
       updateLink,
