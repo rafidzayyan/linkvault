@@ -9,6 +9,7 @@ import { LinkCard } from "./LinkCard";
 import { EmptyState } from "./EmptyState";
 import { LinkFormModal } from "./LinkFormModal";
 import { CategoryManagerModal } from "./CategoryManagerModal";
+import { ShareModal } from "./ShareModal";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ export function Dashboard() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<LinkItem | null>(null);
   const [manageOpen, setManageOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<LinkItem | null>(null);
 
   const catMap = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
@@ -119,6 +121,7 @@ export function Dashboard() {
           sort={sort}
           onSort={setSort}
           onAdd={openAdd}
+          onShare={() => setShareOpen(true)}
           onMenu={() => setDrawerOpen(true)}
         />
 
@@ -169,6 +172,7 @@ export function Dashboard() {
         }
       />
       <CategoryManagerModal open={manageOpen} onClose={() => setManageOpen(false)} />
+      <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} />
       <ConfirmDialog
         open={!!deleteTarget}
         title="Hapus Link"

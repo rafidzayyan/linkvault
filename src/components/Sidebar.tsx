@@ -17,7 +17,7 @@ export function Sidebar({
   onManage: () => void;
   onClose?: () => void;
 }) {
-  const { categories, links } = useLinkVault();
+  const { categories, links, canEdit } = useLinkVault();
 
   const counts = useMemo(() => {
     const m: Record<string, number> = {};
@@ -96,15 +96,17 @@ export function Sidebar({
         ))}
       </nav>
 
-      <div className="border-t border-border p-2">
-        <button
-          onClick={onManage}
-          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted transition hover:bg-muted-bg hover:text-foreground"
-        >
-          <IconSettings width={16} height={16} />
-          Kelola Kategori
-        </button>
-      </div>
+      {canEdit && (
+        <div className="border-t border-border p-2">
+          <button
+            onClick={onManage}
+            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted transition hover:bg-muted-bg hover:text-foreground"
+          >
+            <IconSettings width={16} height={16} />
+            Kelola Kategori
+          </button>
+        </div>
+      )}
     </div>
   );
 }

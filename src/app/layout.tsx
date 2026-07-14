@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { LinkVaultProvider } from "@/lib/store";
+import { AuthGate } from "@/components/AuthGate";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,7 +42,9 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
       <body className="min-h-full font-sans">
-        <LinkVaultProvider>{children}</LinkVaultProvider>
+        <LinkVaultProvider>
+          <AuthGate>{children}</AuthGate>
+        </LinkVaultProvider>
       </body>
     </html>
   );
