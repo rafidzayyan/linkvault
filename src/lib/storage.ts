@@ -1,23 +1,33 @@
-// localStorage persistence layer (PRD Section 4.1 — MVP super cepat pakai localStorage)
-import type { Category, LinkItem } from "./types";
+// localStorage kini hanya untuk preferensi UI (tema, tampilan, vault aktif) +
+// helper kecil. Data link & kategori sudah pindah ke Supabase (lihat lib/api.ts).
+// Kunci "linkvault:categories" / "linkvault:links" lama hanya dibaca untuk
+// migrasi/impor sekali saat login pertama.
 
 const KEYS = {
-  categories: "linkvault:categories",
-  links: "linkvault:links",
   theme: "linkvault:theme",
   view: "linkvault:view",
+  activeVault: "linkvault:activeVault",
+  legacyCategories: "linkvault:categories",
+  legacyLinks: "linkvault:links",
 } as const;
 
-export const OTHERS_ID = "others";
+export interface CategorySeed {
+  name: string;
+  color: string;
+  icon?: string;
+  order: number;
+  isDefault: boolean;
+}
 
-// 5 kategori default sesuai PRD Section 2.2
-export function defaultCategories(now: string): Category[] {
+// 5 kategori default sesuai PRD Section 2.2. "Others" adalah kategori default
+// (isDefault) yang tak bisa dihapus dan jadi tujuan pemindahan link.
+export function defaultCategorySeeds(): CategorySeed[] {
   return [
-    { id: "ai", name: "AI", color: "#6366f1", icon: "🤖", order: 0, isDefault: false, createdAt: now },
-    { id: "digital-marketing", name: "Digital Marketing", color: "#ec4899", icon: "📈", order: 1, isDefault: false, createdAt: now },
-    { id: "automation", name: "Automation", color: "#f59e0b", icon: "⚙️", order: 2, isDefault: false, createdAt: now },
-    { id: "youtube", name: "YouTube", color: "#ef4444", icon: "▶️", order: 3, isDefault: false, createdAt: now },
-    { id: OTHERS_ID, name: "Others", color: "#64748b", icon: "📦", order: 4, isDefault: true, createdAt: now },
+    { name: "AI", color: "#6366f1", icon: "🤖", order: 0, isDefault: false },
+    { name: "Digital Marketing", color: "#ec4899", icon: "📈", order: 1, isDefault: false },
+    { name: "Automation", color: "#f59e0b", icon: "⚙️", order: 2, isDefault: false },
+    { name: "YouTube", color: "#ef4444", icon: "▶️", order: 3, isDefault: false },
+    { name: "Others", color: "#64748b", icon: "📦", order: 4, isDefault: true },
   ];
 }
 
@@ -28,30 +38,6 @@ function safeParse<T>(raw: string | null): T | null {
   } catch {
     return null;
   }
-}
-
-export function loadCategories(): Category[] {
-  if (typeof window === "undefined") return [];
-  const stored = safeParse<Category[]>(localStorage.getItem(KEYS.categories));
-  if (stored && stored.length > 0) return stored;
-  const seeded = defaultCategories(new Date().toISOString());
-  localStorage.setItem(KEYS.categories, JSON.stringify(seeded));
-  return seeded;
-}
-
-export function loadLinks(): LinkItem[] {
-  if (typeof window === "undefined") return [];
-  return safeParse<LinkItem[]>(localStorage.getItem(KEYS.links)) ?? [];
-}
-
-export function saveCategories(categories: Category[]): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(KEYS.categories, JSON.stringify(categories));
-}
-
-export function saveLinks(links: LinkItem[]): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(KEYS.links, JSON.stringify(links));
 }
 
 export function loadTheme(): "light" | "dark" {
@@ -75,6 +61,53 @@ export function loadView(): "list" | "grid" {
 export function saveView(view: "list" | "grid"): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(KEYS.view, view);
+}
+
+export function loadActiveVault(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(KEYS.activeVault);
+}
+
+export function saveActiveVault(id: string): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(KEYS.activeVault, id);
+}
+
+// ---- Migrasi data lama (pra-cloud) ----------------------------------------
+
+interface LegacyCategory {
+  id: string;
+  name: string;
+}
+interface LegacyLink {
+  url: string;
+  title: string;
+  description?: string;
+  categoryId: string;
+  tags?: string[];
+  isFavorite?: boolean;
+  isRead?: boolean;
+  clickCount?: number;
+  lastOpenedAt?: string | null;
+  createdAt?: string;
+}
+
+export function loadLegacyLinks(): LegacyLink[] {
+  if (typeof window === "undefined") return [];
+  return safeParse<LegacyLink[]>(localStorage.getItem(KEYS.legacyLinks)) ?? [];
+}
+
+export function loadLegacyCategories(): LegacyCategory[] {
+  if (typeof window === "undefined") return [];
+  return safeParse<LegacyCategory[]>(localStorage.getItem(KEYS.legacyCategories)) ?? [];
+}
+
+// Dipanggil setelah impor berhasil (atau saat user memilih mulai dari kosong)
+// agar prompt impor tidak muncul lagi.
+export function clearLegacy(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(KEYS.legacyLinks);
+  localStorage.removeItem(KEYS.legacyCategories);
 }
 
 export function uid(): string {

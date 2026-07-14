@@ -1,8 +1,11 @@
 "use client";
 
+import { useLinkVault } from "@/lib/store";
 import { IconLink, IconPlus, IconSearch } from "./ui/Icons";
 
 export function EmptyState({ mode, onAdd }: { mode: "empty" | "no-results"; onAdd: () => void }) {
+  const { canEdit } = useLinkVault();
+
   if (mode === "no-results") {
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-20 text-center">
@@ -22,14 +25,18 @@ export function EmptyState({ mode, onAdd }: { mode: "empty" | "no-results"; onAd
       </span>
       <h3 className="text-base font-semibold">Belum ada link tersimpan</h3>
       <p className="mt-1 max-w-sm text-sm text-muted">
-        Simpan link pertamamu — artikel, video, tools AI, atau referensi apa pun — dan atur ke dalam kategori agar mudah ditemukan.
+        {canEdit
+          ? "Simpan link pertamamu — artikel, video, tools AI, atau referensi apa pun — dan atur ke dalam kategori agar mudah ditemukan."
+          : "Vault ini masih kosong. Link yang ditambahkan pemilik atau editor akan muncul di sini."}
       </p>
-      <button
-        onClick={onAdd}
-        className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-fg transition hover:bg-primary-hover"
-      >
-        <IconPlus width={16} height={16} /> Tambah Link Pertama
-      </button>
+      {canEdit && (
+        <button
+          onClick={onAdd}
+          className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-fg transition hover:bg-primary-hover"
+        >
+          <IconPlus width={16} height={16} /> Tambah Link Pertama
+        </button>
+      )}
     </div>
   );
 }

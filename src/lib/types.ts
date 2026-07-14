@@ -1,7 +1,30 @@
 // Core data models for LinkVault (PRD Section 4.2)
 
+// Sharing (ala Google Sheets): sebuah vault dimiliki satu owner dan bisa
+// di-share ke email lain sebagai viewer atau editor.
+export type Role = "viewer" | "editor";
+export type AccessLevel = "owner" | "editor" | "viewer";
+
+export interface Vault {
+  id: string;
+  ownerId: string;
+  name: string;
+  createdAt: string;
+  // Tingkat akses user saat ini terhadap vault ini (dihitung di klien).
+  access: AccessLevel;
+}
+
+export interface VaultMember {
+  id: string;
+  vaultId: string;
+  email: string;
+  role: Role;
+  createdAt: string;
+}
+
 export interface Category {
   id: string;
+  vaultId: string;
   name: string;
   color: string; // hex color for visual scanning
   icon?: string; // emoji icon (optional)
@@ -12,6 +35,7 @@ export interface Category {
 
 export interface LinkItem {
   id: string;
+  vaultId: string;
   url: string;
   title: string;
   description?: string;

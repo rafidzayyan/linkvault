@@ -28,7 +28,7 @@ export function LinkCard({
   onEdit: (l: LinkItem) => void;
   onDelete: (l: LinkItem) => void;
 }) {
-  const { registerClick, toggleFavorite } = useLinkVault();
+  const { registerClick, toggleFavorite, canEdit } = useLinkVault();
   const [copied, setCopied] = useState(false);
   const [imgError, setImgError] = useState(false);
 
@@ -85,14 +85,20 @@ export function LinkCard({
 
   const actions = (
     <div className="flex items-center gap-0.5">
-      <IconBtn onClick={() => toggleFavorite(link.id)} label="Favorit" active={link.isFavorite}>
-        {link.isFavorite ? <IconStarFilled width={16} height={16} className="text-amber-400" /> : <IconStar width={16} height={16} />}
-      </IconBtn>
+      {canEdit && (
+        <IconBtn onClick={() => toggleFavorite(link.id)} label="Favorit" active={link.isFavorite}>
+          {link.isFavorite ? <IconStarFilled width={16} height={16} className="text-amber-400" /> : <IconStar width={16} height={16} />}
+        </IconBtn>
+      )}
       <IconBtn onClick={copy} label="Salin URL">
         {copied ? <IconCheck width={16} height={16} className="text-emerald-500" /> : <IconCopy width={16} height={16} />}
       </IconBtn>
-      <IconBtn onClick={() => onEdit(link)} label="Edit"><IconEdit width={16} height={16} /></IconBtn>
-      <IconBtn onClick={() => onDelete(link)} label="Hapus" danger><IconTrash width={16} height={16} /></IconBtn>
+      {canEdit && (
+        <>
+          <IconBtn onClick={() => onEdit(link)} label="Edit"><IconEdit width={16} height={16} /></IconBtn>
+          <IconBtn onClick={() => onDelete(link)} label="Hapus" danger><IconTrash width={16} height={16} /></IconBtn>
+        </>
+      )}
     </div>
   );
 
@@ -104,9 +110,13 @@ export function LinkCard({
             {favicon}
             {!link.isRead && <span className="h-2 w-2 shrink-0 rounded-full bg-primary" title="Belum dibuka" />}
           </div>
-          <IconBtn onClick={() => toggleFavorite(link.id)} label="Favorit">
-            {link.isFavorite ? <IconStarFilled width={16} height={16} className="text-amber-400" /> : <IconStar width={16} height={16} />}
-          </IconBtn>
+          {canEdit ? (
+            <IconBtn onClick={() => toggleFavorite(link.id)} label="Favorit">
+              {link.isFavorite ? <IconStarFilled width={16} height={16} className="text-amber-400" /> : <IconStar width={16} height={16} />}
+            </IconBtn>
+          ) : (
+            link.isFavorite && <IconStarFilled width={16} height={16} className="text-amber-400" />
+          )}
         </div>
         <button onClick={open} className="text-left">
           <h3 className="line-clamp-2 font-medium leading-snug hover:text-primary">{link.title}</h3>
@@ -124,8 +134,12 @@ export function LinkCard({
                 <IconBtn onClick={copy} label="Salin URL">
                   {copied ? <IconCheck width={16} height={16} className="text-emerald-500" /> : <IconCopy width={16} height={16} />}
                 </IconBtn>
-                <IconBtn onClick={() => onEdit(link)} label="Edit"><IconEdit width={16} height={16} /></IconBtn>
-                <IconBtn onClick={() => onDelete(link)} label="Hapus" danger><IconTrash width={16} height={16} /></IconBtn>
+                {canEdit && (
+                  <>
+                    <IconBtn onClick={() => onEdit(link)} label="Edit"><IconEdit width={16} height={16} /></IconBtn>
+                    <IconBtn onClick={() => onDelete(link)} label="Hapus" danger><IconTrash width={16} height={16} /></IconBtn>
+                  </>
+                )}
               </div>
             </div>
           </div>

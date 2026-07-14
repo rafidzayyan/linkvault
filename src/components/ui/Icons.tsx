@@ -66,3 +66,15 @@ export const IconGrip = (p: P) => (
 export const IconDownload = (p: P) => (
   <svg {...base} {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
 );
+export const IconShare = (p: P) => (
+  <svg {...base} {...p}><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.59 13.51 6.83 3.98M15.41 6.51 8.59 10.49" /></svg>
+);
+export const IconUsers = (p: P) => (
+  <svg {...base} {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+);
+export const IconLogout = (p: P) => (
+  <svg {...base} {...p}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
+);
+export const IconChevronDown = (p: P) => (
+  <svg {...base} {...p}><path d="m6 9 6 6 6-6" /></svg>
+);

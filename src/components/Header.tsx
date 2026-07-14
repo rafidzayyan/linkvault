@@ -4,7 +4,8 @@ import { useLinkVault } from "@/lib/store";
 import type { SortKey } from "@/lib/types";
 import { useTheme } from "@/lib/useTheme";
 import { cn } from "@/lib/utils";
-import { IconSearch, IconPlus, IconList, IconGrid, IconSun, IconMoon } from "./ui/Icons";
+import { IconSearch, IconPlus, IconList, IconGrid, IconSun, IconMoon, IconShare } from "./ui/Icons";
+import { VaultSwitcher } from "./VaultSwitcher";
 
 export function Header({
   search,
@@ -12,6 +13,7 @@ export function Header({
   sort,
   onSort,
   onAdd,
+  onShare,
   onMenu,
 }: {
   search: string;
@@ -19,9 +21,10 @@ export function Header({
   sort: SortKey;
   onSort: (s: SortKey) => void;
   onAdd: () => void;
+  onShare: () => void;
   onMenu: () => void;
 }) {
-  const { view, setView } = useLinkVault();
+  const { view, setView, canEdit } = useLinkVault();
   const { theme, toggle, mounted } = useTheme();
 
   return (
@@ -29,6 +32,8 @@ export function Header({
       <button onClick={onMenu} className="rounded-lg p-2 text-muted hover:bg-muted-bg lg:hidden" aria-label="Menu">
         <IconList />
       </button>
+
+      <VaultSwitcher />
 
       <div className="relative flex-1">
         <IconSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" width={16} height={16} />
@@ -70,12 +75,24 @@ export function Header({
       </button>
 
       <button
-        onClick={onAdd}
-        className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-fg transition hover:bg-primary-hover"
+        onClick={onShare}
+        className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-2 text-sm font-medium text-muted transition hover:text-foreground"
+        aria-label="Bagikan vault"
+        title="Bagikan"
       >
-        <IconPlus width={16} height={16} />
-        <span className="hidden sm:inline">Tambah Link</span>
+        <IconShare width={16} height={16} />
+        <span className="hidden md:inline">Bagikan</span>
       </button>
+
+      {canEdit && (
+        <button
+          onClick={onAdd}
+          className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-fg transition hover:bg-primary-hover"
+        >
+          <IconPlus width={16} height={16} />
+          <span className="hidden sm:inline">Tambah Link</span>
+        </button>
+      )}
     </header>
   );
 }

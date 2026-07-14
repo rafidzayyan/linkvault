@@ -1,59 +1,104 @@
-# LinkVault — Personal Link Organizer
+# LinkVault — Personal Link Organizer (Cloud + Sharing)
 
-Web app sederhana untuk **menyimpan, mengkategorikan, dan melacak link** dari berbagai sumber (artikel, video, tools AI, referensi marketing, dll) agar tersusun rapi dan mudah dibuka kembali.
-
-Dibangun sesuai [PRD-LinkVault.md](../PRD-LinkVault.md).
+Web app untuk **menyimpan, mengkategorikan, dan melacak link** dari berbagai sumber, kini dengan **login Google** dan **sharing antar akun ala Google Sheets**: bagikan vault-mu ke email lain sebagai **Viewer** (lihat isi & history) atau **Editor** (ikut menambah/mengubah), dengan sinkronisasi **realtime**.
 
 ## Tech Stack
 
-- **Next.js 16** (App Router) + **TypeScript**
-- **Tailwind CSS v4**
-- **localStorage** untuk persistensi data (pendekatan MVP super cepat sesuai PRD §4.1 — tanpa database, langsung deploy & pakai)
+- **Next.js 16** (App Router) + **TypeScript** + **Tailwind CSS v4**
+- **Supabase** — Postgres + Auth (Google OAuth) + Row Level Security + Realtime
+- `@supabase/ssr` untuk sesi berbasis cookie (middleware + server client)
 - API route `/api/metadata` untuk auto-fetch judul + favicon
 
-## Fitur yang sudah diimplementasikan
+## Model sharing
 
-**Manajemen Link (CRUD)** — tambah, edit, hapus (dengan konfirmasi), buka di tab baru, salin URL, auto-fetch judul & favicon.
+- Setiap user punya **vault pribadi** (dibuat otomatis saat login pertama).
+- Owner bisa mengundang email lain sebagai **viewer** atau **editor** (tabel `vault_members`, dicocokkan lewat email di JWT).
+- **Row Level Security** menjamin: hanya owner + member yang bisa membaca; hanya owner + editor yang bisa menulis. Lihat `supabase/schema.sql`.
+- Status link (favorit/read/klik) bersifat **vault-level** (dipakai bersama) pada versi ini.
 
-**Kategori dinamis** — 5 kategori default (AI, Digital Marketing, Automation, YouTube, Others), tambah/rename/hapus/reorder, warna & ikon, kategori "Others" terproteksi, reassignment link saat kategori dihapus.
+---
 
-**Pencarian & filter** — search real-time (judul/URL/catatan/tag), filter per kategori, filter favorit, sortir (terbaru/terlama/A–Z/paling sering dibuka).
+## Setup (wajib, sekali saja)
 
-**Tracking** — click count, last opened, tanggal ditambahkan, status baca (read/unread), favorit/pin.
+### 1. Buat project Supabase
+- Daftar di [supabase.com](https://supabase.com) → **New project** (free tier cukup).
+- Catat **Project URL** dan **anon public key** dari **Project Settings → API**.
 
-**UI/UX** — dashboard sidebar + daftar link, toggle list/grid view, responsive (drawer di mobile), dark mode, empty state, counter per kategori.
+### 2. Jalankan schema database
+- Buka **SQL Editor** di dashboard Supabase → **New query**.
+- Salin seluruh isi [`supabase/schema.sql`](supabase/schema.sql) → **Run**. (Aman dijalankan ulang.)
 
-## Menjalankan secara lokal
+### 3. Aktifkan Login Google
+- **Google Cloud Console** → buat **OAuth 2.0 Client ID** (tipe *Web application*).
+  - **Authorized redirect URI**: `https://<PROJECT_REF>.supabase.co/auth/v1/callback`
+- Di Supabase → **Authentication → Providers → Google**: aktifkan, tempel **Client ID** & **Client Secret**.
+- Di Supabase → **Authentication → URL Configuration**:
+  - **Site URL**: `http://localhost:3000` (dev) — nanti ganti/ tambah domain Vercel untuk produksi.
+  - **Redirect URLs**: tambahkan `http://localhost:3000/**` (dan domain Vercel saat deploy).
+
+### 4. Isi environment variable
+```bash
+cp .env.local.example .env.local
+```
+Isi `.env.local`:
+```
+NEXT_PUBLIC_SUPABASE_URL=https://<PROJECT_REF>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon public key>
+```
+
+> `anon key` memang bersifat publik dan aman dipakai di browser karena semua akses dijaga oleh Row Level Security. **Jangan** pernah menaruh `service_role key` di frontend.
+
+---
+
+## Menjalankan lokal
 
 ```bash
 npm install
 npm run dev
 ```
+Buka [http://localhost:3000](http://localhost:3000) → **Masuk dengan Google**.
 
-Buka [http://localhost:3000](http://localhost:3000).
+Jika env belum diisi, app menampilkan layar panduan setup (bukan crash).
 
-## Deploy ke Vercel (sesuai workflow PRD §9)
+## Cara berbagi vault
 
-1. Push folder ini ke GitHub.
-2. Import repo di [vercel.com](https://vercel.com) → framework terdeteksi otomatis (Next.js).
-3. Deploy. Tidak perlu environment variable karena data disimpan di `localStorage` browser.
+1. Klik tombol **Bagikan** di header.
+2. Masukkan email Gmail tujuan, pilih **Viewer** atau **Editor**, klik **Undang**.
+3. Orang tersebut login dengan Google → vault muncul di **pemilih vault** (kiri header). Viewer hanya bisa melihat; editor bisa menambah/mengubah.
+4. Ubah peran atau cabut akses kapan saja dari dialog **Bagikan** (khusus owner).
 
-> **Catatan:** karena data disimpan di `localStorage`, data bersifat per-browser/perangkat. Untuk multi-perangkat atau multi-user, lanjutkan ke **Fase 2** (Vercel Postgres/Supabase + Prisma) dan **Fase 3** (auth) sesuai roadmap PRD.
+## Deploy ke Vercel
+
+1. Push repo ke GitHub, lalu **Import** di [vercel.com](https://vercel.com).
+2. Tambahkan Environment Variables: `NEXT_PUBLIC_SUPABASE_URL` & `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+3. Setelah dapat domain Vercel, tambahkan domain tsb ke **Supabase → Authentication → URL Configuration** (Site URL + Redirect URLs) dan ke **Authorized redirect URI** di Google Cloud (via callback Supabase yang sama).
+4. Deploy.
 
 ## Struktur
 
 ```
+supabase/schema.sql              # tabel + helper functions + RLS + realtime
 src/
+├── middleware.ts                # refresh sesi Supabase tiap request
 ├── app/
-│   ├── api/metadata/route.ts   # auto-fetch judul + favicon
-│   ├── layout.tsx              # provider + theme init
-│   ├── page.tsx                # render <Dashboard/>
-│   └── globals.css             # tema light/dark
-├── components/                 # Header, Sidebar, LinkCard, modal-modal, dsb.
+│   ├── auth/callback/route.ts   # tukar OAuth code → sesi
+│   ├── api/metadata/route.ts    # auto-fetch judul + favicon
+│   ├── layout.tsx               # LinkVaultProvider + AuthGate
+│   └── page.tsx                 # render <Dashboard/>
+├── components/
+│   ├── AuthGate.tsx             # login Google, layar setup, banner impor, toast error
+│   ├── ShareModal.tsx           # dialog berbagi (undang/ubah peran/cabut)
+│   ├── VaultSwitcher.tsx        # pindah vault + info user + logout
+│   └── ...                      # Header, Sidebar, LinkCard, modal, dsb.
 └── lib/
-    ├── types.ts                # Category, LinkItem (data model PRD §4.2)
-    ├── storage.ts              # localStorage + seed 5 kategori default
-    ├── store.tsx               # React context: semua CRUD + business rules
-    ├── useTheme.ts
-    └── utils.ts                # validasi URL, favicon, format waktu
+    ├── supabase/{client,server}.ts  # Supabase client (browser & server)
+    ├── api.ts                   # akses data Supabase (mapping snake_case↔camelCase)
+    ├── store.tsx                # context: sesi, vault, CRUD async, realtime, sharing
+    ├── storage.ts               # localStorage: tema/view/vault aktif + migrasi data lama
+    ├── types.ts                 # Vault, VaultMember, Category, LinkItem
+    └── utils.ts
 ```
+
+## Migrasi dari versi localStorage lama
+
+Saat login pertama, jika ditemukan data link lama di `localStorage` browser, app menawarkan **impor otomatis** ke vault cloud-mu. Pilih *Impor sekarang* atau *Abaikan*.
