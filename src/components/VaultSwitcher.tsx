@@ -13,7 +13,7 @@ const accessLabel: Record<AccessLevel, string> = {
 };
 
 export function VaultSwitcher() {
-  const { vaults, activeVaultId, setActiveVault, user, signOut } = useLinkVault();
+  const { vaults, activeVaultId, setActiveVault, user, signOut, localMode } = useLinkVault();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -67,18 +67,26 @@ export function VaultSwitcher() {
             ))}
           </div>
 
-          <div className="border-t border-border p-2">
-            <div className="px-2 pb-2 pt-1">
-              <p className="truncate text-xs font-medium">{user?.name}</p>
-              <p className="truncate text-[11px] text-muted">{user?.email}</p>
+          {localMode ? (
+            <div className="border-t border-border p-2">
+              <p className="px-2 py-1 text-[11px] text-muted">
+                Mode lokal — data disimpan di browser ini.
+              </p>
             </div>
-            <button
-              onClick={() => signOut()}
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted transition hover:bg-muted-bg hover:text-foreground"
-            >
-              <IconLogout width={16} height={16} /> Keluar
-            </button>
-          </div>
+          ) : (
+            <div className="border-t border-border p-2">
+              <div className="px-2 pb-2 pt-1">
+                <p className="truncate text-xs font-medium">{user?.name}</p>
+                <p className="truncate text-[11px] text-muted">{user?.email}</p>
+              </div>
+              <button
+                onClick={() => signOut()}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted transition hover:bg-muted-bg hover:text-foreground"
+              >
+                <IconLogout width={16} height={16} /> Keluar
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

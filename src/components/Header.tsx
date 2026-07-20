@@ -24,7 +24,7 @@ export function Header({
   onShare: () => void;
   onMenu: () => void;
 }) {
-  const { view, setView, canEdit } = useLinkVault();
+  const { view, setView, canEdit, localMode } = useLinkVault();
   const { theme, toggle, mounted } = useTheme();
 
   return (
@@ -74,15 +74,17 @@ export function Header({
         {mounted && theme === "dark" ? <IconSun width={16} height={16} /> : <IconMoon width={16} height={16} />}
       </button>
 
-      <button
-        onClick={onShare}
-        className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-2 text-sm font-medium text-muted transition hover:text-foreground"
-        aria-label="Bagikan vault"
-        title="Bagikan"
-      >
-        <IconShare width={16} height={16} />
-        <span className="hidden md:inline">Bagikan</span>
-      </button>
+      {!localMode && (
+        <button
+          onClick={onShare}
+          className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-2 text-sm font-medium text-muted transition hover:text-foreground"
+          aria-label="Bagikan vault"
+          title="Bagikan"
+        >
+          <IconShare width={16} height={16} />
+          <span className="hidden md:inline">Bagikan</span>
+        </button>
+      )}
 
       {canEdit && (
         <button

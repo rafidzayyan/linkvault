@@ -25,9 +25,14 @@ import {
   loadActiveVault,
   loadLegacyCategories,
   loadLegacyLinks,
+  loadLocalCategories,
+  loadLocalLinks,
   loadView,
   saveActiveVault,
+  saveLocalCategories,
+  saveLocalLinks,
   saveView,
+  seedLocalCategories,
   uid,
 } from "./storage";
 import * as api from "./api";
@@ -39,6 +44,7 @@ type Status = "loading" | "no-config" | "signed-out" | "ready";
 interface Ctx {
   status: Status;
   ready: boolean; // data untuk vault aktif sudah termuat
+  localMode: boolean; // true bila Supabase tidak dikonfigurasi (data di browser)
   user: { id: string; email: string; name: string } | null;
 
   // Vaults & akses
@@ -92,10 +98,14 @@ const LinkVaultContext = createContext<Ctx | null>(null);
 const isConfigured = () =>
   !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+// Vault sintetis untuk mode lokal (tanpa cloud/akun).
+const LOCAL_VAULT_ID = "local";
+
 export function LinkVaultProvider({ children }: { children: React.ReactNode }) {
+  const localMode = !isConfigured();
   const supabase = useMemo(() => (isConfigured() ? createClient() : null), []);
 
-  const [status, setStatus] = useState<Status>(isConfigured() ? "loading" : "no-config");
+  const [status, setStatus] = useState<Status>("loading");
   const [ready, setReady] = useState(false);
   const [user, setUser] = useState<Ctx["user"]>(null);
 
@@ -126,6 +136,47 @@ export function LinkVaultProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setViewState(loadView());
   }, []);
+
+  // ---- Mode lokal: bootstrap dari localStorage (tanpa Supabase) -----------
+
+  useEffect(() => {
+    if (!localMode) return;
+    const now = new Date().toISOString();
+    const vault: Vault = {
+      id: LOCAL_VAULT_ID,
+      ownerId: "local",
+      name: "LinkVault (Lokal)",
+      createdAt: now,
+      access: "owner",
+    };
+    setUser({ id: "local", email: "", name: "Lokal" });
+    setVaults([vault]);
+    setActiveVaultId(LOCAL_VAULT_ID);
+
+    let cats = loadLocalCategories();
+    if (cats.length === 0) {
+      cats = seedLocalCategories(LOCAL_VAULT_ID);
+      saveLocalCategories(cats);
+    }
+    const lks = loadLocalLinks();
+    setCategories(cats);
+    setLinks(lks);
+    setReady(true);
+    setStatus("ready");
+
+    // Tawarkan impor data lama bila belum ada link lokal.
+    if (lks.length === 0) setLegacyCount(loadLegacyLinks().length);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localMode]);
+
+  // Persist perubahan ke localStorage saat mode lokal aktif.
+  useEffect(() => {
+    if (localMode && ready) saveLocalLinks(links);
+  }, [localMode, ready, links]);
+
+  useEffect(() => {
+    if (localMode && ready) saveLocalCategories(categories);
+  }, [localMode, ready, categories]);
 
   // ---- Bootstrap: sesi → vaults → vault aktif -----------------------------
 
@@ -647,7 +698,7 @@ export function LinkVaultProvider({ children }: { children: React.ReactNode }) {
 
   const importingRef = useRef(false);
   const importLegacy = useCallback(async () => {
-    if (!supabase || !activeVaultId || importingRef.current) return;
+    if (!activeVaultId || importingRef.current) return;
     importingRef.current = true;
     try {
       const legacyLinks = loadLegacyLinks();
@@ -678,7 +729,10 @@ export function LinkVaultProvider({ children }: { children: React.ReactNode }) {
         };
       });
 
-      for (const l of newLinks) await api.insertLink(supabase, l);
+      if (supabase) {
+        for (const l of newLinks) await api.insertLink(supabase, l);
+      }
+      // Mode lokal: cukup masukkan ke state; effect persist ke localStorage.
       setLinks((prev) => [...newLinks, ...prev]);
       clearLegacy();
       setLegacyCount(0);
@@ -698,6 +752,7 @@ export function LinkVaultProvider({ children }: { children: React.ReactNode }) {
     () => ({
       status,
       ready,
+      localMode,
       user,
       vaults,
       activeVaultId,
@@ -735,6 +790,7 @@ export function LinkVaultProvider({ children }: { children: React.ReactNode }) {
     [
       status,
       ready,
+      localMode,
       user,
       vaults,
       activeVaultId,

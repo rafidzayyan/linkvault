@@ -1,7 +1,11 @@
-// localStorage kini hanya untuk preferensi UI (tema, tampilan, vault aktif) +
-// helper kecil. Data link & kategori sudah pindah ke Supabase (lihat lib/api.ts).
+// localStorage menyimpan preferensi UI (tema, tampilan, vault aktif) + helper
+// kecil. Bila Supabase dikonfigurasi, data link & kategori ada di cloud
+// (lihat lib/api.ts). Bila TIDAK dikonfigurasi, app berjalan dalam "mode lokal"
+// dan data disimpan penuh di localStorage (kunci linkvault:local:*).
 // Kunci "linkvault:categories" / "linkvault:links" lama hanya dibaca untuk
-// migrasi/impor sekali saat login pertama.
+// migrasi/impor sekali.
+
+import type { Category, LinkItem } from "./types";
 
 const KEYS = {
   theme: "linkvault:theme",
@@ -9,6 +13,8 @@ const KEYS = {
   activeVault: "linkvault:activeVault",
   legacyCategories: "linkvault:categories",
   legacyLinks: "linkvault:links",
+  localCategories: "linkvault:local:categories",
+  localLinks: "linkvault:local:links",
 } as const;
 
 export interface CategorySeed {
@@ -71,6 +77,45 @@ export function loadActiveVault(): string | null {
 export function saveActiveVault(id: string): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(KEYS.activeVault, id);
+}
+
+// ---- Mode lokal (tanpa Supabase) ------------------------------------------
+// Menyimpan kategori & link penuh di localStorage. Dipakai saat env Supabase
+// belum diisi, agar app tetap berfungsi sepenuhnya untuk 1 pengguna/browser.
+
+export function loadLocalCategories(): Category[] {
+  if (typeof window === "undefined") return [];
+  return safeParse<Category[]>(localStorage.getItem(KEYS.localCategories)) ?? [];
+}
+
+export function saveLocalCategories(categories: Category[]): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(KEYS.localCategories, JSON.stringify(categories));
+}
+
+export function loadLocalLinks(): LinkItem[] {
+  if (typeof window === "undefined") return [];
+  return safeParse<LinkItem[]>(localStorage.getItem(KEYS.localLinks)) ?? [];
+}
+
+export function saveLocalLinks(links: LinkItem[]): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(KEYS.localLinks, JSON.stringify(links));
+}
+
+// Bangun kategori default (lengkap dengan id) untuk vault lokal baru.
+export function seedLocalCategories(vaultId: string): Category[] {
+  const now = new Date().toISOString();
+  return defaultCategorySeeds().map((s) => ({
+    id: uid(),
+    vaultId,
+    name: s.name,
+    color: s.color,
+    icon: s.icon,
+    order: s.order,
+    isDefault: s.isDefault,
+    createdAt: now,
+  }));
 }
 
 // ---- Migrasi data lama (pra-cloud) ----------------------------------------
